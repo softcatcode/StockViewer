@@ -7,6 +7,7 @@ import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -53,9 +54,17 @@ fun DrawScope.drawBar(
 fun BarCanvas(barList: List<Bar>) {
 
     var visibleBarsCount by remember { mutableIntStateOf(50) }
-    var barWidth by remember { mutableFloatStateOf(0f) }
-    var screenWidth by remember { mutableFloatStateOf(0f) }
+    var screenWidth by remember { mutableFloatStateOf(1f) }
+    val barWidth by remember { derivedStateOf { screenWidth / visibleBarsCount } }
     var scrolledBy by remember { mutableFloatStateOf(0f) }
+
+    val visibleBars by remember {
+        derivedStateOf {
+            val startIndex = (scrolledBy / barWidth).roundToInt().coerceAtLeast(0)
+            val endIndex = (startIndex + visibleBarsCount).coerceAtMost(barList.size)
+            barList.subList(startIndex, endIndex)
+        }
+    }
 
     val transformableState = TransformableState { zoomChange, panChange, _ ->
         visibleBarsCount = (visibleBarsCount / zoomChange)
@@ -72,10 +81,9 @@ fun BarCanvas(barList: List<Bar>) {
     ) {
         val minY = 0f
         val maxY = size.height
-        val minPrice = barList.minOf { it.min }
-        val maxPrice = barList.maxOf { it.max }
+        val minPrice = visibleBars.minOf { it.min }
+        val maxPrice = visibleBars.maxOf { it.max }
         screenWidth = size.width
-        barWidth = size.width / visibleBarsCount
         translate(left = scrolledBy) {
             barList.forEachIndexed { index, bar ->
                 drawBar(minY, maxY, minPrice, maxPrice, index, bar, barWidth)
