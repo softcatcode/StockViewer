@@ -3,14 +3,14 @@ package com.softcat.stockviewer.presentation.stockPlot
 import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 
 @Composable
 fun StockScreenContent(viewModel: StockViewModel) {
-    val state by viewModel.state.collectAsState(initial = StockScreenState.Initial)
-    when (state) {
+    val state = viewModel.state.collectAsState(initial = StockScreenState.Initial)
+    when (val currentState = state.value) {
         is StockScreenState.Bars -> {
-            Log.i("StockScreenContent", "Bars")
+            BarCanvas(currentState.barList)
+            Log.i("StockScreenContent", "Bars: ${currentState.barList}")
         }
         StockScreenState.Initial -> {
             Log.i("StockScreenContent", "Initial")
