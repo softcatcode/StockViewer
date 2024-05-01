@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
+    id("kotlin-parcelize")
 }
 
 android {
@@ -59,6 +60,17 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+
+    // view model creating
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+
+    // retrofit
+    implementation(libs.com.squareapp.retrofit)
+    implementation(libs.com.squareapp.retrofit.gson.converter)
+
+    // logging network requests
+    implementation(libs.com.squareapp.okhttp)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
