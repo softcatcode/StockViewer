@@ -67,6 +67,9 @@ dependencies {
     implementation(libs.com.squareapp.retrofit)
     implementation(libs.com.squareapp.retrofit.gson.converter)
 
+    // logging network requests
+    implementation(libs.com.squareapp.okhttp)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
