@@ -5,5 +5,7 @@ import com.softcat.stockviewer.domain.entities.Bar
 sealed class StockScreenState {
     data object Initial: StockScreenState()
 
+    data object Loading: StockScreenState()
+
     data class Bars(val barList: List<Bar>): StockScreenState()
 }

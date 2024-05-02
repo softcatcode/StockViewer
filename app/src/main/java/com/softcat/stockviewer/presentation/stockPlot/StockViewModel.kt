@@ -29,10 +29,10 @@ class StockViewModel: ViewModel() {
     }
 
     private fun loadBars() {
+        _state.value = StockScreenState.Loading
         viewModelScope.launch(Dispatchers.IO + exceptionHandler) {
             val barDtoList = apiService.loadBars().barList
-            val newState = StockScreenState.Bars(mapper.mapBarDtoListToEntityList(barDtoList))
-            _state.emit(newState)
+            _state.value = StockScreenState.Bars(mapper.mapBarDtoListToEntityList(barDtoList))
         }
     }
 }

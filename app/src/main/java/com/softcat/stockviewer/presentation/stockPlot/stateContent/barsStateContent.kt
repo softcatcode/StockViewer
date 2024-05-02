@@ -1,4 +1,4 @@
-package com.softcat.stockviewer.presentation.stockPlot
+package com.softcat.stockviewer.presentation.stockPlot.stateContent
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -27,6 +27,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.softcat.stockviewer.domain.entities.Bar
+import com.softcat.stockviewer.presentation.stockPlot.StockPlotState
 import kotlin.math.roundToInt
 
 private const val MIN_VISIBLE_COUNT = 10
