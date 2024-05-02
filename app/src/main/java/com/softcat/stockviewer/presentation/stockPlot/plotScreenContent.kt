@@ -136,16 +136,16 @@ fun BarCanvas(barList: List<Bar>) {
         val maxY = size.height
         val minPrice = stockPlotState.visibleBars.minOf { it.min }
         val maxPrice = stockPlotState.visibleBars.maxOf { it.max }
+        translate(left = stockPlotState.scrolledBy) {
+            barList.forEachIndexed { index, bar ->
+                drawBar(minY, maxY, minPrice, maxPrice, index, bar, stockPlotState.barWidth)
+            }
+        }
         drawInfoLines(
             min = minPrice,
             max = maxPrice,
             current = stockPlotState.barList[0].close,
             textMeasurer = textMeasurer
         )
-        translate(left = stockPlotState.scrolledBy) {
-            barList.forEachIndexed { index, bar ->
-                drawBar(minY, maxY, minPrice, maxPrice, index, bar, stockPlotState.barWidth)
-            }
-        }
     }
 }
