@@ -12,7 +12,9 @@ fun StockScreenContent() {
     val state = viewModel.state.collectAsState(initial = StockScreenState.Initial)
 
     when (val currentState = state.value) {
-        is StockScreenState.Bars -> BarCanvas(currentState.barList)
+        is StockScreenState.Bars -> BarCanvas(currentState.barList, currentState.timeFrame) {
+            viewModel.loadBars(it)
+        }
 
         is StockScreenState.Loading -> LoadingPlot()
 

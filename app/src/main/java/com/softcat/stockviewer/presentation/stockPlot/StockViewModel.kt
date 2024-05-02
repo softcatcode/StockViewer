@@ -29,7 +29,7 @@ class StockViewModel: ViewModel() {
         loadBars()
     }
 
-    private fun loadBars(timeFrame: TimeFrame = TimeFrame.MIN_30) {
+    fun loadBars(timeFrame: TimeFrame = TimeFrame.MIN_30) {
         _state.value = StockScreenState.Loading
         viewModelScope.launch(Dispatchers.IO + exceptionHandler) {
             val barDtoList = apiService.loadBars().barList

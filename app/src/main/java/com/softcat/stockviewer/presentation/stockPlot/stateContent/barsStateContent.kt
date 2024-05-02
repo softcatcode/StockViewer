@@ -4,10 +4,14 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.MaterialTheme
@@ -17,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
@@ -31,6 +36,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.softcat.stockviewer.R
@@ -122,11 +128,16 @@ fun DrawScope.drawInfoLines(
 
 @Composable
 fun TimeFrames(
+    modifier: Modifier = Modifier,
     selected: TimeFrame,
     onElementClicked: (TimeFrame) -> Unit
 ) {
-    Row(
-        modifier = Modifier.wrapContentSize()
+    val firstColor = MaterialTheme.colorScheme.background
+    val secondColor = MaterialTheme.colorScheme.onBackground
+    LazyRow(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
     ) {
         TimeFrame.entries.forEach {
             val labelResId = when (it) {
@@ -135,29 +146,37 @@ fun TimeFrames(
                 TimeFrame.MIN_30 -> R.string.timeframe_30_minutes
                 TimeFrame.HOUR_1 -> R.string.timeframe_1_hours
             }
-            val firstColor = MaterialTheme.colorScheme.background
-            val secondColor = MaterialTheme.colorScheme.onBackground
             val textColor = if (selected == it) firstColor else secondColor
-            val fieldColor = if (selected == it) firstColor else secondColor
-            AssistChip(
-                onClick = { onElementClicked(it) },
-                label = {
-                    Text(
-                        text = stringResource(id = labelResId),
-                        fontSize = 20.sp,
-                        color = textColor,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                colors = AssistChipDefaults.assistChipColors().copy(containerColor = fieldColor)
-            )
+            val fieldColor = if (selected == it) secondColor else firstColor
+            item {
+                AssistChip(
+                    modifier = Modifier.width(70.dp),
+                    onClick = { onElementClicked(it) },
+                    label = {
+                        Text(
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center,
+                            text = stringResource(id = labelResId),
+                            fontSize = 16.sp,
+                            color = textColor,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1
+                        )
+                    },
+                    colors = AssistChipDefaults.assistChipColors().copy(containerColor = fieldColor)
+                )
+            }
         }
     }
 
 }
 
 @Composable
-fun BarCanvas(barList: List<Bar>) {
+fun BarCanvas(
+    barList: List<Bar>,
+    timeFrame: TimeFrame,
+    onTimeFrameClicked: (TimeFrame) -> Unit
+) {
     var stockPlotState by rememberSaveable { mutableStateOf(StockPlotState(barList)) }
     val textMeasurer = rememberTextMeasurer()
 
@@ -172,31 +191,42 @@ fun BarCanvas(barList: List<Bar>) {
             scrolledBy = scrolledBy
         )
     }
-    Canvas(
+
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .clipToBounds()
-            .padding(top = 15.dp, bottom = 15.dp)
-            .transformable(transformableState)
-            .onSizeChanged {
-                stockPlotState = stockPlotState.copy(screenWidth = it.width.toFloat())
-            }
     ) {
-        val minY = 0f
-        val maxY = size.height
-        val minPrice = stockPlotState.visibleBars.minOf { it.min }
-        val maxPrice = stockPlotState.visibleBars.maxOf { it.max }
-        translate(left = stockPlotState.scrolledBy) {
-            barList.forEachIndexed { index, bar ->
-                drawBar(minY, maxY, minPrice, maxPrice, index, bar, stockPlotState.barWidth)
-            }
-        }
-        drawInfoLines(
-            min = minPrice,
-            max = maxPrice,
-            current = stockPlotState.barList[0].close,
-            textMeasurer = textMeasurer
+        TimeFrames(
+            modifier = Modifier.fillMaxWidth(0.8f).height(40.dp),
+            selected = timeFrame,
+            onElementClicked = onTimeFrameClicked
         )
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+                .clipToBounds()
+                .padding(top = 15.dp, bottom = 15.dp)
+                .transformable(transformableState)
+                .onSizeChanged {
+                    stockPlotState = stockPlotState.copy(screenWidth = it.width.toFloat())
+                }
+        ) {
+            val minY = 0f
+            val maxY = size.height
+            val minPrice = stockPlotState.visibleBars.minOf { it.min }
+            val maxPrice = stockPlotState.visibleBars.maxOf { it.max }
+            translate(left = stockPlotState.scrolledBy) {
+                barList.forEachIndexed { index, bar ->
+                    drawBar(minY, maxY, minPrice, maxPrice, index, bar, stockPlotState.barWidth)
+                }
+            }
+            drawInfoLines(
+                min = minPrice,
+                max = maxPrice,
+                current = stockPlotState.barList[0].close,
+                textMeasurer = textMeasurer
+            )
+        }
     }
 }
