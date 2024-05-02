@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.softcat.stockviewer.data.DtoMapper
 import com.softcat.stockviewer.data.network.ApiFactory
+import com.softcat.stockviewer.domain.entities.TimeFrame
 import com.softcat.stockviewer.domain.interfaces.DtoMapperInterface
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
@@ -28,11 +29,11 @@ class StockViewModel: ViewModel() {
         loadBars()
     }
 
-    private fun loadBars() {
+    private fun loadBars(timeFrame: TimeFrame = TimeFrame.MIN_30) {
         _state.value = StockScreenState.Loading
         viewModelScope.launch(Dispatchers.IO + exceptionHandler) {
             val barDtoList = apiService.loadBars().barList
-            _state.value = StockScreenState.Bars(mapper.mapBarDtoListToEntityList(barDtoList))
+            _state.value = StockScreenState.Bars(mapper.mapBarDtoListToEntityList(barDtoList), timeFrame)
         }
     }
 }
