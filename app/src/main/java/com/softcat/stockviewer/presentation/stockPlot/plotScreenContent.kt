@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.TransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -14,9 +15,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.unit.dp
 import com.softcat.stockviewer.domain.entities.Bar
 import kotlin.math.roundToInt
 
@@ -49,6 +52,35 @@ fun DrawScope.drawBar(
     )
 }
 
+fun DrawScope.drawHorizontalDashedLine(
+    y: Float,
+    startX: Float = 0f,
+    endX: Float = size.width,
+    color: Color = Color.White,
+    strokeWidth: Float = 1f
+) {
+    drawLine(
+        start = Offset(startX, y),
+        end = Offset(endX, y),
+        color = color,
+        strokeWidth = strokeWidth,
+        pathEffect = PathEffect.dashPathEffect(
+            intervals = floatArrayOf(4.dp.toPx(), 4.dp.toPx())
+        )
+    )
+}
+
+fun DrawScope.drawInfoLines(
+    min: Float,
+    max: Float,
+    currentPrice: Float
+) {
+    val pixelsPerUnit = size.height / (max - min)
+    drawHorizontalDashedLine(0f)
+    drawHorizontalDashedLine(size.height - (currentPrice - min) * pixelsPerUnit)
+    drawHorizontalDashedLine(size.height)
+}
+
 @Composable
 fun BarCanvas(barList: List<Bar>) {
 
@@ -69,6 +101,7 @@ fun BarCanvas(barList: List<Bar>) {
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .padding(top = 15.dp, bottom = 15.dp)
             .transformable(transformableState)
             .onSizeChanged {
                 stockPlotState = stockPlotState.copy(screenWidth = it.width.toFloat())
@@ -78,6 +111,7 @@ fun BarCanvas(barList: List<Bar>) {
         val maxY = size.height
         val minPrice = stockPlotState.visibleBars.minOf { it.min }
         val maxPrice = stockPlotState.visibleBars.maxOf { it.max }
+        drawInfoLines(minPrice, maxPrice, stockPlotState.barList[0].close)
         translate(left = stockPlotState.scrolledBy) {
             barList.forEachIndexed { index, bar ->
                 drawBar(minY, maxY, minPrice, maxPrice, index, bar, stockPlotState.barWidth)
