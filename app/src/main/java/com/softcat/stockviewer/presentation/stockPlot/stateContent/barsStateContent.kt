@@ -4,9 +4,14 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -20,13 +25,17 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.softcat.stockviewer.R
 import com.softcat.stockviewer.domain.entities.Bar
+import com.softcat.stockviewer.domain.entities.TimeFrame
 import com.softcat.stockviewer.presentation.stockPlot.StockPlotState
 import kotlin.math.roundToInt
 
@@ -109,6 +118,42 @@ fun DrawScope.drawInfoLines(
         textMeasurer = textMeasurer,
         text = if (currentPriceY < delta || size.height - currentPriceY < delta) "" else current.toString()
     )
+}
+
+@Composable
+fun TimeFrames(
+    selected: TimeFrame,
+    onElementClicked: (TimeFrame) -> Unit
+) {
+    Row(
+        modifier = Modifier.wrapContentSize()
+    ) {
+        TimeFrame.entries.forEach {
+            val labelResId = when (it) {
+                TimeFrame.MIN_5 -> R.string.timeframe_5_minutes
+                TimeFrame.MIN_15 -> R.string.timeframe_15_minutes
+                TimeFrame.MIN_30 -> R.string.timeframe_30_minutes
+                TimeFrame.HOUR_1 -> R.string.timeframe_1_hours
+            }
+            val firstColor = MaterialTheme.colorScheme.background
+            val secondColor = MaterialTheme.colorScheme.onBackground
+            val textColor = if (selected == it) firstColor else secondColor
+            val fieldColor = if (selected == it) firstColor else secondColor
+            AssistChip(
+                onClick = { onElementClicked(it) },
+                label = {
+                    Text(
+                        text = stringResource(id = labelResId),
+                        fontSize = 20.sp,
+                        color = textColor,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                colors = AssistChipDefaults.assistChipColors().copy(containerColor = fieldColor)
+            )
+        }
+    }
+
 }
 
 @Composable
