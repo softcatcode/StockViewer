@@ -21,10 +21,13 @@ class StockViewModel: ViewModel() {
     private val dtoMapper: DtoMapperInterface = DtoMapper()
     private val enumMapper: EnumMapperInterface = EnumMapper()
 
+    private var lastState: StockScreenState = StockScreenState.Initial
+
     private val _state = MutableStateFlow<StockScreenState>(StockScreenState.Initial)
     val state = _state.asSharedFlow()
 
     private val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
+        _state.value = lastState
         Log.d(this::class.qualifiedName, throwable.toString())
     }
 
@@ -33,6 +36,7 @@ class StockViewModel: ViewModel() {
     }
 
     fun loadBars(timeFrame: TimeFrame = TimeFrame.MIN_30) {
+        lastState = _state.value
         _state.value = StockScreenState.Loading
         viewModelScope.launch(Dispatchers.IO + exceptionHandler) {
             val timeFrameData = enumMapper.mapTimeFrameToString(timeFrame)
