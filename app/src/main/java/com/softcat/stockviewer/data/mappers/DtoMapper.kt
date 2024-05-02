@@ -1,4 +1,4 @@
-package com.softcat.stockviewer.data
+package com.softcat.stockviewer.data.mappers
 
 import com.softcat.stockviewer.data.models.BarDto
 import com.softcat.stockviewer.domain.entities.Bar
