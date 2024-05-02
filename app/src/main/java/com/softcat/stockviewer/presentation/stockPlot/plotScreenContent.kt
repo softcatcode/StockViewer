@@ -19,7 +19,12 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.text.TextMeasurer
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.softcat.stockviewer.domain.entities.Bar
 import kotlin.math.roundToInt
 
@@ -52,13 +57,28 @@ fun DrawScope.drawBar(
     )
 }
 
-fun DrawScope.drawHorizontalDashedLine(
+fun DrawScope.drawInfoLine(
     y: Float,
     startX: Float = 0f,
     endX: Float = size.width,
     color: Color = Color.White,
-    strokeWidth: Float = 1f
+    strokeWidth: Float = 1f,
+    textMeasurer: TextMeasurer? = null,
+    text: String = ""
 ) {
+    textMeasurer?.apply {
+        val textLayoutResult = measure(
+            text = text,
+            style = TextStyle(
+                fontSize = 12.sp,
+                color = color
+            )
+        )
+        drawText(
+            textLayoutResult = textLayoutResult,
+            topLeft = Offset(size.width - textLayoutResult.size.width,y - textLayoutResult.size.height)
+        )
+    }
     drawLine(
         start = Offset(startX, y),
         end = Offset(endX, y),
@@ -73,18 +93,23 @@ fun DrawScope.drawHorizontalDashedLine(
 fun DrawScope.drawInfoLines(
     min: Float,
     max: Float,
-    currentPrice: Float
+    current: Float,
+    textMeasurer: TextMeasurer
 ) {
     val pixelsPerUnit = size.height / (max - min)
-    drawHorizontalDashedLine(0f)
-    drawHorizontalDashedLine(size.height - (currentPrice - min) * pixelsPerUnit)
-    drawHorizontalDashedLine(size.height)
+    drawInfoLine(y = 0f, textMeasurer = textMeasurer, text = max.toString())
+    drawInfoLine(
+        y = size.height - (current - min) * pixelsPerUnit,
+        textMeasurer = textMeasurer,
+        text = current.toString()
+    )
+    drawInfoLine(y = size.height, textMeasurer = textMeasurer, text = min.toString())
 }
 
 @Composable
 fun BarCanvas(barList: List<Bar>) {
-
     var stockPlotState by rememberSaveable { mutableStateOf(StockPlotState(barList)) }
+    val textMeasurer = rememberTextMeasurer()
 
     val transformableState = TransformableState { zoomChange, panChange, _ ->
         val visibleBarCount = (stockPlotState.visibleBarCount / zoomChange)
@@ -111,7 +136,12 @@ fun BarCanvas(barList: List<Bar>) {
         val maxY = size.height
         val minPrice = stockPlotState.visibleBars.minOf { it.min }
         val maxPrice = stockPlotState.visibleBars.maxOf { it.max }
-        drawInfoLines(minPrice, maxPrice, stockPlotState.barList[0].close)
+        drawInfoLines(
+            min = minPrice,
+            max = maxPrice,
+            current = stockPlotState.barList[0].close,
+            textMeasurer = textMeasurer
+        )
         translate(left = stockPlotState.scrolledBy) {
             barList.forEachIndexed { index, bar ->
                 drawBar(minY, maxY, minPrice, maxPrice, index, bar, stockPlotState.barWidth)
