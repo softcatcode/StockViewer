@@ -5,6 +5,7 @@ import com.softcat.stockviewer.domain.entities.Bar
 import kotlinx.android.parcel.Parcelize
 import kotlin.math.roundToInt
 
+@Suppress("DEPRECATED_ANNOTATION")
 @Parcelize
 data class StockPlotState(
     val barList: List<Bar>,
