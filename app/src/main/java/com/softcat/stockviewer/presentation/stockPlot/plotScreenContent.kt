@@ -97,13 +97,16 @@ fun DrawScope.drawInfoLines(
     textMeasurer: TextMeasurer
 ) {
     val pixelsPerUnit = size.height / (max - min)
+    val currentPriceY = size.height - (current - min) * pixelsPerUnit
+    val delta = 35
+
     drawInfoLine(y = 0f, textMeasurer = textMeasurer, text = max.toString())
-    drawInfoLine(
-        y = size.height - (current - min) * pixelsPerUnit,
-        textMeasurer = textMeasurer,
-        text = current.toString()
-    )
     drawInfoLine(y = size.height, textMeasurer = textMeasurer, text = min.toString())
+    drawInfoLine(
+        y = currentPriceY,
+        textMeasurer = textMeasurer,
+        text = if (currentPriceY < delta || size.height - currentPriceY < delta) "" else current.toString()
+    )
 }
 
 @Composable
