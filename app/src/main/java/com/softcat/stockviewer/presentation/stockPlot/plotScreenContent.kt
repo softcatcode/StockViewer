@@ -2,7 +2,7 @@ package com.softcat.stockviewer.presentation.stockPlot
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.TransformableState
+import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -13,6 +13,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
@@ -114,7 +115,7 @@ fun BarCanvas(barList: List<Bar>) {
     var stockPlotState by rememberSaveable { mutableStateOf(StockPlotState(barList)) }
     val textMeasurer = rememberTextMeasurer()
 
-    val transformableState = TransformableState { zoomChange, panChange, _ ->
+    val transformableState = rememberTransformableState { zoomChange, panChange, _ ->
         val visibleBarCount = (stockPlotState.visibleBarCount / zoomChange)
             .roundToInt()
             .coerceIn(MIN_VISIBLE_COUNT, barList.size)
@@ -129,6 +130,7 @@ fun BarCanvas(barList: List<Bar>) {
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .clipToBounds()
             .padding(top = 15.dp, bottom = 15.dp)
             .transformable(transformableState)
             .onSizeChanged {
