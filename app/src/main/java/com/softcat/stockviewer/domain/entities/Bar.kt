@@ -1,11 +1,12 @@
 package com.softcat.stockviewer.domain.entities
 
-import android.icu.util.Calendar
+import java.util.Calendar
 import android.os.Parcelable
 import androidx.compose.runtime.Immutable
 import kotlinx.android.parcel.Parcelize
 import java.util.Date
 
+@Suppress("DEPRECATED_ANNOTATION")
 @Immutable
 @Parcelize
 data class Bar(
