@@ -10,7 +10,7 @@ import kotlin.math.roundToInt
 data class StockPlotState(
     val barList: List<Bar>,
     val visibleBarCount: Int = 100,
-    val screenWidth: Float = 0f,
+    val screenWidth: Float = 1f,
     val scrolledBy: Float = 0f
 ): Parcelable {
     val barWidth: Float

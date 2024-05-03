@@ -17,10 +17,8 @@ import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
@@ -43,6 +41,9 @@ import com.softcat.stockviewer.R
 import com.softcat.stockviewer.domain.entities.Bar
 import com.softcat.stockviewer.domain.entities.TimeFrame
 import com.softcat.stockviewer.presentation.stockPlot.StockPlotState
+import java.util.Calendar
+import java.util.Locale
+import kotlin.math.max
 import kotlin.math.roundToInt
 
 private const val MIN_VISIBLE_COUNT = 10
@@ -50,15 +51,15 @@ private const val MIN_VISIBLE_COUNT = 10
 fun DrawScope.drawBar(
     minY: Float, maxY: Float,
     minPrice: Float, maxPrice: Float,
-    index: Int, bar: Bar,
+    offsetX: Float,
+    bar: Bar,
     barWidth: Float
 ) {
     val pixelsPerPrice = (maxY - minY) / (maxPrice - minPrice)
-    val xOffset = size.width - barWidth * (index + 0.5f)
-    val minPoint = Offset(xOffset, maxY - (bar.min - minPrice) * pixelsPerPrice)
-    val maxPoint = Offset(xOffset, maxY - (bar.max - minPrice) * pixelsPerPrice)
-    val openPoint = Offset(xOffset, maxY - (bar.open - minPrice) * pixelsPerPrice)
-    val closePoint = Offset(xOffset, maxY - (bar.close - minPrice) * pixelsPerPrice)
+    val minPoint = Offset(offsetX, maxY - (bar.min - minPrice) * pixelsPerPrice)
+    val maxPoint = Offset(offsetX, maxY - (bar.max - minPrice) * pixelsPerPrice)
+    val openPoint = Offset(offsetX, maxY - (bar.open - minPrice) * pixelsPerPrice)
+    val closePoint = Offset(offsetX, maxY - (bar.close - minPrice) * pixelsPerPrice)
     val color = if (bar.open < bar.close) Color.Green else Color.Red
     drawLine(
         color = Color.White,
@@ -168,65 +169,136 @@ fun TimeFrames(
             }
         }
     }
+}
 
+fun DrawScope.drawTimeLine(
+    textMeasurer: TextMeasurer,
+    timeFrame: TimeFrame,
+    offsetX: Float,
+    bar: Bar,
+    nextBar: Bar? = null
+) {
+    val calendar = bar.calendar
+    val minute = calendar.get(Calendar.MINUTE)
+    val hour = calendar.get(Calendar.HOUR_OF_DAY)
+    val day = calendar.get(Calendar.DAY_OF_MONTH)
+
+    val timeLineVisible = when (timeFrame) {
+        TimeFrame.MIN_5 -> minute == 0
+        TimeFrame.MIN_15 -> minute == 0 && hour % 2 == 0
+        else -> day != nextBar?.calendar?.get(Calendar.DAY_OF_MONTH)
+    }
+    if (!timeLineVisible)
+        return
+
+    drawLine(
+        color = Color.White.copy(alpha = 0.5f),
+        strokeWidth = 1f,
+        start = Offset(offsetX, 0f),
+        end = Offset(offsetX, size.height),
+        pathEffect = PathEffect.dashPathEffect(
+            intervals = floatArrayOf(4.dp.toPx(), 4.dp.toPx())
+        )
+    )
+    val monthName = calendar.getDisplayName(Calendar.MONTH, Calendar.SHORT, Locale.getDefault())
+    val timeLabel = when (timeFrame) {
+        TimeFrame.MIN_5, TimeFrame.MIN_15 -> String.format("%02d:00", hour)
+        TimeFrame.MIN_30, TimeFrame.HOUR_1 -> String.format("%s %s", day, monthName)
+    }
+    val textLayoutResult = textMeasurer.measure(
+        text = timeLabel,
+        style = TextStyle(
+            fontSize = 12.sp,
+            color = Color.White
+        )
+    )
+    drawText(
+        textLayoutResult = textLayoutResult,
+        topLeft = Offset(
+            x = offsetX - textLayoutResult.size.width / 2,
+            y = size.height - textLayoutResult.size.height
+        )
+    )
 }
 
 @Composable
 fun BarCanvas(
     barList: List<Bar>,
+    modifier: Modifier = Modifier,
     timeFrame: TimeFrame,
-    onTimeFrameClicked: (TimeFrame) -> Unit
 ) {
-    var stockPlotState by rememberSaveable { mutableStateOf(StockPlotState(barList)) }
     val textMeasurer = rememberTextMeasurer()
+    val state = rememberSaveable { mutableStateOf(StockPlotState(barList)) }
+    val currentPlotState = state.value
 
     val transformableState = rememberTransformableState { zoomChange, panChange, _ ->
-        val visibleBarCount = (stockPlotState.visibleBarCount / zoomChange)
+        val visibleBarCount = (currentPlotState.visibleBarCount / zoomChange)
             .roundToInt()
-            .coerceIn(MIN_VISIBLE_COUNT, barList.size)
-        val scrolledBy = (stockPlotState.scrolledBy + panChange.x)
-            .coerceIn(0f, stockPlotState.barWidth * barList.size - stockPlotState.screenWidth)
-        stockPlotState = stockPlotState.copy(
+            .coerceIn(MIN_VISIBLE_COUNT, currentPlotState.barList.size)
+        val scrolledBy = (currentPlotState.scrolledBy + panChange.x)
+            .coerceIn(0f, max(currentPlotState.barWidth * currentPlotState.barList.size - state.value.screenWidth, 0f))
+        state.value = currentPlotState.copy(
             visibleBarCount = visibleBarCount,
             scrolledBy = scrolledBy
         )
     }
 
+    Canvas(
+        modifier = modifier.transformable(transformableState).onSizeChanged {
+            state.value = state.value.copy(screenWidth = it.width.toFloat())
+        }
+    ) {
+        val minY = 0f
+        val maxY = size.height
+        val minPrice = currentPlotState.visibleBars.minOf { it.min }
+        val maxPrice = currentPlotState.visibleBars.maxOf { it.max }
+        translate(left = currentPlotState.scrolledBy) {
+            currentPlotState.barList.forEachIndexed { index, bar ->
+                val offsetX = size.width - currentPlotState.barWidth * (index + 0.5f)
+                drawBar(minY, maxY, minPrice, maxPrice, offsetX, bar, currentPlotState.barWidth)
+                drawTimeLine(
+                    textMeasurer = textMeasurer,
+                    timeFrame = timeFrame,
+                    offsetX = offsetX,
+                    bar = bar,
+                    nextBar = if (index < currentPlotState.barList.lastIndex) currentPlotState.barList[index + 1] else null
+                )
+            }
+        }
+        drawInfoLines(
+            min = minPrice,
+            max = maxPrice,
+            current = currentPlotState.barList[0].close,
+            textMeasurer = textMeasurer
+        )
+    }
+}
+
+@Composable
+fun BarPlot(
+    barList: List<Bar>,
+    timeFrame: TimeFrame,
+    onTimeFrameClicked: (TimeFrame) -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
         TimeFrames(
-            modifier = Modifier.fillMaxWidth(0.8f).height(40.dp),
+            modifier = Modifier
+                .fillMaxWidth(0.8f)
+                .height(40.dp),
             selected = timeFrame,
             onElementClicked = onTimeFrameClicked
         )
-        Canvas(
+        BarCanvas(
             modifier = Modifier
                 .fillMaxSize()
                 .clipToBounds()
-                .padding(top = 15.dp, bottom = 15.dp)
-                .transformable(transformableState)
-                .onSizeChanged {
-                    stockPlotState = stockPlotState.copy(screenWidth = it.width.toFloat())
-                }
-        ) {
-            val minY = 0f
-            val maxY = size.height
-            val minPrice = stockPlotState.visibleBars.minOf { it.min }
-            val maxPrice = stockPlotState.visibleBars.maxOf { it.max }
-            translate(left = stockPlotState.scrolledBy) {
-                barList.forEachIndexed { index, bar ->
-                    drawBar(minY, maxY, minPrice, maxPrice, index, bar, stockPlotState.barWidth)
-                }
-            }
-            drawInfoLines(
-                min = minPrice,
-                max = maxPrice,
-                current = stockPlotState.barList[0].close,
-                textMeasurer = textMeasurer
-            )
-        }
+                .padding(top = 15.dp, bottom = 15.dp),
+            barList = barList,
+            timeFrame = timeFrame
+        )
     }
 }
