@@ -40,7 +40,7 @@ class StockViewModel: ViewModel() {
         _state.value = StockScreenState.Loading
         viewModelScope.launch(Dispatchers.IO + exceptionHandler) {
             val timeFrameData = enumMapper.mapTimeFrameToString(timeFrame)
-            val barDtoResponse = apiService.loadBars(timeFrameData)
+            val barDtoResponse = apiService.loadBars(timeFrameData, limit = 5000)
             val newBarList = dtoMapper.mapBarDtoListToEntityList(barDtoResponse.barList)
             _state.value = StockScreenState.Bars(newBarList, timeFrame)
         }
