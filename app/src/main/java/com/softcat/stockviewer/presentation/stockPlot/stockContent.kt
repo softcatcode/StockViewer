@@ -2,13 +2,13 @@ package com.softcat.stockviewer.presentation.stockPlot
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.softcat.stockviewer.presentation.stockPlot.stateContent.BarPlot
 import com.softcat.stockviewer.presentation.stockPlot.stateContent.LoadingPlot
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun StockScreenContent() {
-    val viewModel: StockViewModel = viewModel()
+    val viewModel = koinViewModel<StockViewModel>()
     val state = viewModel.state.collectAsState(initial = StockScreenState.Initial)
 
     when (val currentState = state.value) {
@@ -16,8 +16,8 @@ fun StockScreenContent() {
             viewModel.loadBars(it)
         }
 
-        is StockScreenState.Loading -> LoadingPlot()
+        StockScreenState.Loading -> LoadingPlot()
 
-        is StockScreenState.Initial -> {}
+        StockScreenState.Initial -> {}
     }
 }

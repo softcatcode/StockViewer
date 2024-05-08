@@ -71,6 +71,10 @@ dependencies {
     // logging network requests
     implementation(libs.com.squareapp.okhttp)
 
+    // koin
+    implementation(platform(libs.koin.bom))
+    implementation(libs.koin.compose)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
